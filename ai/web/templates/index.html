@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Stream</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+</head>
+<body>
+    <h1>Webcam Stream</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <script>
+        const video = document.getElementById('video');
+        const socket = io();
+
+        // Access the webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+
+                // Set canvas dimensions equal to the video element
+                canvas.width = video.width;
+                canvas.height = video.height;
+
+                // Capture the video frame and send it to the server
+                setInterval(() => {
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const dataURL = canvas.toDataURL('image/jpeg');
+                    socket.emit('video_frame', dataURL);
+                }, 100); // Send every 100ms
+            })
+            .catch(error => {
+                console.error("Error accessing webcam:", error);
+            });
+
+        // Listen for alerts from the server
+        socket.on('alert', function(data) {
+            alert(data.message);
+        });
+    </script>
+</body>
+</html>
