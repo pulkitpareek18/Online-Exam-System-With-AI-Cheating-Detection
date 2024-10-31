@@ -2,42 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webcam Stream</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <title>YOLO Detection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        /* Fullscreen red overlay */
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.8); /* Red with opacity */
+            color: white;
+            font-size: 2em;
+            text-align: center;
+            padding-top: 20%;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body>
-    <h1>Webcam Stream</h1>
-    <video id="video" width="640" height="480" autoplay></video>
+    <video id="video" autoplay></video>
+    
+    <!-- Red overlay -->
+    <div id="overlay">
+        No cheating! Cell phone detected. Your test has been paused.
+    </div>
+
+    <!-- Siren sound -->
+    <audio id="siren" src="static/siren.mp3" preload="auto"></audio> <!-- Make sure to have the siren.mp3 file in the same directory -->
+
     <script>
+        const socket = io.connect('http://127.0.0.1:5000');
         const video = document.getElementById('video');
-        const socket = io();
+        const overlay = document.getElementById('overlay');
+        const siren = document.getElementById('siren');
+        let warningCount = 0;  // Initialize warning counter
 
-        // Access the webcam
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
+        // Access camera
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
 
-                // Set canvas dimensions equal to the video element
-                canvas.width = video.width;
-                canvas.height = video.height;
+            setInterval(() => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataURL = canvas.toDataURL('image/jpeg');
+                socket.emit('video_frame', dataURL);
+            }, 100); // Adjust interval as needed
+        });
 
-                // Capture the video frame and send it to the server
-                setInterval(() => {
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const dataURL = canvas.toDataURL('image/jpeg');
-                    socket.emit('video_frame', dataURL);
-                }, 100); // Send every 100ms
-            })
-            .catch(error => {
-                console.error("Error accessing webcam:", error);
-            });
-
-        // Listen for alerts from the server
-        socket.on('alert', function(data) {
-            alert(data.message);
+        // Receive alerts from the server
+        socket.on('alert', data => {
+            warningCount += 1;  // Increment the warning counter
+            
+            if (warningCount < 3) {
+                alert(`Warning ${warningCount}: Cell phone detected!`);
+            } else {
+                overlay.style.display = 'block'; // Show overlay and pause test
+                siren.play(); // Play siren sound
+            }
         });
     </script>
 </body>

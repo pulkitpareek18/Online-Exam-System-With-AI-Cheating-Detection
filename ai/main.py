@@ -5,8 +5,8 @@ import requests  # For sending alerts to the server
 
 # Start webcam
 cap = cv2.VideoCapture(0)
-cap.set(3, 640)
-cap.set(4, 480)
+cap.set(3, 1920)
+cap.set(4, 1080)
 
 # Load YOLO model
 model = YOLO("yolo-Weights/yolov8n.pt")
@@ -21,7 +21,7 @@ classNames = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "trai
               "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed",
               "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "keyboard", "cell phone",
               "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
-              "teddy bear", "hair drier", "toothbrush"
+              "teddy bear", "hair drier", "toothbrush", "smartphone"
               ]
 
 # Replace with your server URL if needed
